@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PyCamp - Курс Python</title>
+    
+    <!-- Подключение библиотеки для подсветки синтаксиса -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script>hljs.highlightAll();</script>
+
+    <style>
+        :root {
+            --bg-primary: #1e1e1e;
+            --bg-secondary: #252526;
+            --text-primary: #d4d4d4;
+            --accent: #007acc;
+            --success: #378c3b;
+            --border: #333;
+            --font-mono: 'JetBrains Mono', 'Fira Code', Menlo, Monaco, Consolas, monospace;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body { font-family: Arial, sans-serif; background-color: var(--bg-primary); color: var(--text-primary); display: flex; height: 100vh; overflow: hidden; }
+        
+        .sidebar {
+            width: 250px;
+            background-color: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            padding: 1rem;
+            overflow-y: auto;
+        }
+        
+        .sidebar h2 { text-align: center; margin-bottom: 1rem; color: var(--accent); font-size: 1.2rem; }
+        
+        .lesson-list { list-style: none; flex-grow: 1; }
+        .lesson-item { 
+            padding: 0.8rem; 
+            margin-bottom: 0.5rem; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            transition: background-color 0.2s;
+            border-left: 3px solid transparent;
+            font-size: 0.9rem;
+        }
+        .lesson-item:hover { background-color: #333; }
+        .lesson-item.active { background-color: #004f7a; border-left-color: var(--accent); }
+        .lesson-item.completed { background-color: var(--success); color: white; opacity: 0.9; }
+        
+        .progress-container { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+        .progress-text { font-size: 0.85rem; margin-bottom: 0.5rem; }
+        .progress-bar {
+            width: 100%; height: 8px; background-color: var(--border); border-radius: 4px; overflow: hidden;
+        }
+        .progress-fill { height: 100%; background-color: var(--accent); width: 0%; transition: width 0.5s ease-in-out; }
+
+        .main-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        
+        .header {
+            padding: 1rem;
+            background-color: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .lesson-title { font-size: 1.3rem; font-weight: bold; color: var(--accent); }
+        .run-btn {
+            background-color: var(--accent); color: white; border: none; padding: 0.6rem 1.2rem; 
+            border-radius: 6px; font-weight: bold; cursor: pointer; transition: background-color 0.2s;
+        }
+        .run-btn:hover { background-color: #005a99; }
+        .run-btn:disabled { background-color: #555; cursor: not-allowed; }
+
+        .editor-console-wrapper {
+            flex-grow: 1;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            padding: 1rem;
+            overflow: hidden;
+        }
+        
+        .code-block, .console-block {
+            background-color: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .block-header {
+            padding: 0.5rem 1rem;
+            background-color: #2d2d2d;
+            font-weight: bold;
+            font-size: 0.9rem;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        textarea#code-editor {
+            flex-grow: 1;
+            width: 100%;
+            padding: 1rem;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            border: none;
+            outline: none;
+            resize: none;
+            font-family: var(--font-mono);
+            font-size: 1rem;
+            line-height: 1.5;
+        }
+        
+        pre#console-output {
+            flex-grow: 1;
+            padding: 1rem;
+            margin: 0;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            border: none;
+            outline: none;
+            resize: none;
+            font-family: var(--font-mono);
+            font-size: 0.95rem;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            word-break: break-word;
+            overflow-y: auto;
+        }
+
+        /* Мобильная адаптация */
+        @media (max-width: 900px) {
+            .editor-console-wrapper { grid-template-columns: 1fr; }
+            .sidebar { width: 200px; }
+        }
+
+        @media (max-width: 600px) {
+            .sidebar { display: none; }
+            .header { padding: 0.8rem; }
+            .lesson-title { font-size: 1.1rem; }
+            .run-btn { padding: 0.5rem 1rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <h2>Уроки PyCamp</h2>
+    <ul class="lesson-list" id="lessonList"></ul>
+    <div class="progress-container">
+        <div class="progress-text">Прогресс курса: <span id="progressPercent">0</span>%</div>
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    </div>
+</div>
+
+<div class="main-content">
+    <div class="header">
+        <div class="lesson-title" id="currentLessonTitle">Выберите урок</div>
+        <button class="run-btn" id="runBtn" disabled>Запустить ▶️</button>
+    </div>
+    
+    <div class="editor-console-wrapper">
+        <div class="code-block">
+            <div class="block-header">Редактор кода</div>
+            <textarea id="code-editor" spellcheck="false"></textarea>
+        </div>
+        <div class="console-block">
+            <div class="block-header">Вывод программы</div>
+            <pre id="console-output"><code>Здесь появится результат выполнения вашего кода.</code></pre>
+        </div>
+    </div>
+</div>
+
+<script>
+// --- ДАННЫЕ УРОКОВ ---
+const lessons = [
+    {
+        id: 0,
+        title: "Привет, мир!",
+        description: "Первая программа.",
+        task: "Выведите на экран строку 'Привет, PyCamp!'",
+        solution: "print('Привет, PyCamp!')"
+    },
+    {
+        id: 1,
+        title: "Переменные и типы данных",
+        description: "Хранение информации.",
+        task: "Создайте переменную age со значением 25 и выведите её тип с помощью type().",
+        solution: "age = 25\nprint(type(age))"
+    },
+    {
+        id: 2,
+        title: "Арифметические операции",
+        description: "Основы математики.",
+        task: "Присвойте переменным a=10, b=3. Выведите их сумму, разность, произведение и остаток от деления.",
+        solution: "a = 10\nb = 3\nprint(a + b)\nprint(a - b)\nprint(a * b)\nprint(a % b)"
+    },
+    {
+        id: 3,
+        title: "Списки (Lists)",
+        description: "Коллекции данных.",
+        task: "Создайте список fruits = ['яблоко', 'банан']. Добавьте 'груша' и выведите второй элемент списка.",
+        solution: "fruits = ['яблоко', 'банан']\nfruits.append('груша')\nprint(fruits[1])"
+    },
+    {
+        id: 4,
+        title: "Циклы for",
+        description: "Повторяющиеся действия.",
+        task: "С помощью цикла for выведите числа от 1 до 5 включительно.",
+        solution: "for i in range(1, 6):\n    print(i)"
+    },
+    {
+        id: 5,
+        title: "Функции",
+        description: "Переиспользуемый код.",
+        task: "Напишите функцию greet(name), которая выводит 'Привет, [имя]!'. Вызовите её с именем 'Евгений'.",
+        solution: "def greet(name):\n    print(f'Привет, {name}!')\n\ngreet('Евгений')"
+    },
+    {
+        id: 6,
+        title: "Условия if-else",
+        description: "Принятие решений.",
+        task: "Проверьте число num = 10. Если оно больше 5, выведите 'Большое', иначе 'Маленькое'.",
+        solution: "num = 10\nif num > 5:\n    print('Большое')\nelse:\n    print('Маленькое')"
+    },
+    {
+        id: 7,
+        title: "Работа с файлами",
+        description: "Чтение и запись.",
+        task: "Запишите строку 'Данные успешно сохранены.' в файл data.txt.",
+        solution: "with open('data.txt', 'w', encoding='utf-8') as f:\n    f.write('Данные успешно сохранены.')"
+    },
+    {
+        id: 8,
+        title: "Импорт библиотек",
+        description: "Расширяем возможности.",
+        task: "Подключите модуль math и выведите корень из 16.",
+        solution: "import math\nprint(math.sqrt(16))"
+    },
+    {
+        id: 9,
+        title: "Финальный проект",
+        description: "Проверка знаний.",
+        task: "Напишите программу, которая просит пользователя ввести имя и возраст, а затем выводит сообщение: '[Имя], вам через год будет [возраст+1] лет.'",
+        solution: "name = input('Введите ваше имя: ')\nage = int(input('Введите ваш возраст: '))\nprint(f'{name}, вам через год будет {age + 1} лет.')"
+    }
+];
+
+// --- СОСТОЯНИЕ ПРИЛОЖЕНИЯ ---
+let currentLessonIndex = null;
+const progressData = JSON.parse(localStorage.getItem('pycamp_progress')) || {};
+
+// --- ССЫЛКИ НА ЭЛЕМЕНТЫ DOM ---
+const lessonListEl = document.getElementById('lessonList');
+const runBtn = document.getElementById('runBtn');
+const codeEditor = document.getElementById('code-editor');
+const consoleOutput = document.getElementById('console-output');
+const currentLessonTitle = document.getElementById('currentLessonTitle');
+const progressFill = document.getElementById('progressFill');
+const progressPercent = document.getElementById('progressPercent');
+
+// --- ФУНКЦИИ ОТРИСОВКИ И ЛОГИКИ ---
+function renderLessons() {
+    lessonListEl.innerHTML = '';
+    lessons.forEach((lesson, index) => {
+        const li = document.createElement('li');
+        li.className = 'lesson-item';
+        li.textContent = `${lesson.title}`;
+        
+        // Проверяем статус завершения
+        if (progressData[index] === true) {
+            li.classList.add('completed');
+            li.innerHTML += ' ✅';
+        }
+        
+        li.addEventListener('click', () => loadLesson(index));
+        lessonListEl.appendChild(li);
+    });
+}
+
+function updateProgress() {
+    const completedCount = Object.keys(progressData).length;
+    const percent = Math.round((completedCount / lessons.length) * 100);
+    progressFill.style.width = percent + '%';
+    progressPercent.textContent = percent;
+}
+
+function loadLesson(index) {
+    currentLessonIndex = index;
+    const lesson = lessons[index];
+    
+    // Обновляем UI
+    currentLessonTitle.textContent = lesson.title;
+    codeEditor.value = ''; // Очищаем поле перед загрузкой нового задания
+    consoleOutput.innerHTML = '<code>Результат выполнения...</code>';
+    
+    // Показываем задание пользователю
+    alert(`Задача:\n${lesson.task}\n\nРешение должно вывести правильный ответ при запуске.`);
+    
+    // Активируем кнопку запуска
+    runBtn.disabled = false;
+    
+    // Меняем активные классы в сайдбаре
+    document.querySelectorAll('.lesson-item').forEach(item => item.classList.remove('active'));
+    lessonListEl.children[index].classList.add('active');
+    
+    // Для удобства разработки можно сразу вставить решение (закомментировано)
+    // codeEditor.value = lesson.solution;
+}
+
+async function executeCode(code) {
+    runBtn.disabled = true;
+    consoleOutput.innerHTML = '<code>Выполнение...</code>';
+    
+    try {
+        // Используем бесплатный компилятор Piston API
+        const response = await fetch('https://emkc.org/api/v2/piston/execute', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                language: 'python',
+                version: '3.12',
+                files: [{ name: 'main.py', content: code }]
+            })
+        });
+
+        const result = await response.json();
+
+        let outputText = '';
+        if (result.output) {
+            outputText += result.output;
+        }
+        if (result.stderr && result.stderr.trim() !== '') {
+            outputText += '\n--- ОШИБКИ ---\n' + result.stderr;
+        }
+        
+        if (!outputText.trim()) {
+            outputText = '(Программа завершилась без вывода)';
+        }
+
+        consoleOutput.innerHTML = `<code>${escapeHtml(outputText)}</code>`;
+        
+        // Простая проверка решения: если нет ошибок stderr и есть какой-то вывод
+        if (!result.stderr && result.output) {
+            markAsCompleted(currentLessonIndex);
+        }
+
+    } catch (error) {
+        consoleOutput.innerHTML = `<code style="color: red;">Ошибка сети или API: ${error.message}</code>`;
+    } finally {
+        runBtn.disabled = false;
+    }
+}
+
+function markAsCompleted(index) {
+    if (progressData[index] !== true) {
+        progressData[index] = true;
+        localStorage.setItem('pycamp_progress', JSON.stringify(progressData));
+        renderLessons();
+        updateProgress();
+    }
+}
+
+// Утилита для экранирования HTML-тегов в выводе
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// --- ОБРАБОТЧИКИ СОБЫТИЙ ---
+document.getElementById('runBtn').addEventListener('click', () => {
+    const userCode = codeEditor.value;
+    if (userCode.trim() === '') return;
+    executeCode(userCode);
+});
+
+// Горячие клавиши Ctrl+Enter / Cmd+Enter
+codeEditor.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        runBtn.click();
+    }
+});
+
+
+// --- ЗАПУСК ПРИЛОЖЕНИЯ ---
+renderLessons();
+updateProgress();
+loadLesson(0); // Загружаем первый урок по умолчанию
+
+</script>
+
+</body>
+</html>
