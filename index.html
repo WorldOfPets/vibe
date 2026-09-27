@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WorldOfPets</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fa;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            padding: 40px;
+            max-width: 480px;
+            width: 100%;
+        }
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 24px;
+            color: #1a1a2e;
+            text-align: center;
+        }
+
+        nav {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        nav a {
+            display: block;
+            padding: 14px 20px;
+            background: #f0f4ff;
+            color: #3b5bdb;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            transition: background 0.2s, transform 0.15s;
+        }
+
+        nav a:hover {
+            background: #3b5bdb;
+            color: #fff;
+            transform: translateX(4px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🐾 WorldOfPets</h1>
+        <nav>
+            <a href="cursor.html">Cursor</a>
+            <a href="deepseek.html">DeepSeek</a>
+            <a href="gigachat.html">GigaChat</a>
+            <a href="openclaw.html">OpenClaw</a>
+            <a href="qwen_web_dev.html">Qwen Web Dev</a>
+            <a href="zai.html">Zai</a>
+        </nav>
+    </div>
+</body>
+</html>
